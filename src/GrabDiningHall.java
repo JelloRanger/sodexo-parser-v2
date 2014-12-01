@@ -28,10 +28,50 @@ public class GrabDiningHall {
 	
 	
 	// tester main function
-	/*public static void main(String args[]) throws IOException {
-		GrabDiningHall gdh = new GrabDiningHall("https://rpi.sodexomyway.com/images/WeeklyMenuRSDH%2012-1-14_tcm1068-29436.htm", "thursday", "brk", null, "vegetarian");
-		gdh.parsePage();
-	}*/
+	public static void main(String args[]) throws IOException {
+		GrabDiningHall gdh = new GrabDiningHall(null, "thursday", "brk", null, "vegetarian");
+		
+		
+		gdh.determineDiningHall("sage");
+		ArrayList<FoodItem> listthing = gdh.parsePage();
+		
+		for (FoodItem fi : listthing) {
+			System.out.println(fi.getName());
+		}
+	}
+	
+	// determine dining hall url
+	public boolean determineDiningHall(String dinHallName) throws IOException {
+		
+		// initialize document for parsing
+		Document doc;
+		
+		// grab correct dining hall index page
+		switch (dinHallName.toLowerCase()) {
+			case "sage":
+				doc = Jsoup.connect("https://rpi.sodexomyway.com/dining-choices/res/sage.html").userAgent("Mozilla/5.0").timeout(30000).get();
+				break;
+			case "commons":
+				doc = Jsoup.connect("https://rpi.sodexomyway.com/dining-choices/res/index.html").userAgent("Mozilla/5.0").timeout(30000).get();
+				break;
+			case "blitman":
+				doc = Jsoup.connect("https://rpi.sodexomyway.com/dining-choices/res/bitman.html").userAgent("Mozilla/5.0").timeout(30000).get();
+				break;
+			case "barh":
+				doc = Jsoup.connect("https://rpi.sodexomyway.com/dining-choices/res/BARH.html").userAgent("Mozilla/5.0").timeout(30000).get();
+				break;
+			default:
+				return false;
+		}
+		
+		// parse URL to the specific dining hall's menu page
+		Element link = doc.select("div[id^=accordion] a[href][target]").first();
+		System.out.println(link.attr("href"));
+		
+		this.diningHallURL = "https://rpi.sodexomyway.com" + link.attr("href");
+		
+		return true;
+	}
 	
 	// constructor given all attributes (dining hall, day of week, meal, station, vegan/vegetarian/mindful item)
 	public GrabDiningHall(String diningHallURL, String dayOfWeek, String mealTime, String station, String attr) { 
@@ -44,10 +84,15 @@ public class GrabDiningHall {
 		else if (mealTime.equalsIgnoreCase("lunch")) this.mealTime = "lun";
 		else if (mealTime.equalsIgnoreCase("dinner")) this.mealTime = "din";
 		else this.mealTime = mealTime;
+		
+		foodItems = new ArrayList<FoodItem>();
 	}
 	
 	// parse the provided URL given the provided attributes
-	public boolean parsePage() throws IOException {
+	public ArrayList<FoodItem> parsePage() throws IOException {
+		
+		// clear foodItems before parsing
+		foodItems.clear();
 		
 		// connect to the dining hall menu webpage
 		Document doc = Jsoup.connect(diningHallURL).userAgent("Mozilla/5.0").timeout(30000).get();
@@ -77,13 +122,14 @@ public class GrabDiningHall {
 		// select based on station
 		//todo
 		
-		System.out.println(meals.size());
 		
 		for (Element meal : meals) {
-			System.out.println(meal.text());
+			FoodItem fi = new FoodItem();
+			fi.setName(meal.text());
+			foodItems.add(fi);
 		}
 		
-		return true;
+		return foodItems;
 	}
 	
 }
